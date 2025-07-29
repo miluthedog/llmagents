@@ -2,10 +2,9 @@ import subprocess
 from mcp.server.fastmcp import FastMCP
 
 
-mcp = FastMCP("terminal")
+mcp = FastMCP("command_executor")
 DEFAULT_WORKSPACE = "D:/"
 
-# Allow host to run "command" in shell (cwd)
 @mcp.tool()
 async def run_command(command: str) -> str:
     try: 
@@ -18,16 +17,15 @@ async def run_command(command: str) -> str:
 if __name__ == "__main__":
     mcp.run(transport='stdio')
 
-
 ''' host's config
 {
 "mcpServers": {
-    "terminal": {
+    "command_executor": {
         "command": "D:/python/Scripts/uv.exe",
         "args": [
             "--directory",
-            "D:/Pha hust/Mechatronics Engineering/random code/random Py/AItraining/agent",
+            "D:/Pha hust/Mechatronics Engineering/random code/random Py/AItraining/agent/tool",
             "run",
-            "toolTerminal.py"]}}
+            "command.py"]}}
 }
 '''

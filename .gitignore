@@ -4,6 +4,4 @@ __pycache__/
 .env
 
 uv.lock
-pyproject.toml
-
 client.py
