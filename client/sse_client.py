@@ -33,34 +33,50 @@ class MCPClient:
         print("\nConnected to server with tools:", [tool.name for tool in tools])
         self.tools_list = convert_mcp_tools_to_gemini(tools)
 
-    async def process(self, prompt: str) -> str:
+    async def process(self, user_prompt: str) -> str:
         system_prompt = """
-        You are an AI assistant that can use external tools (functions) to help answer questions or perform tasks.
+        You are a smart assistant that solves problems using tools (functions) when necessary.
+        
+        Always follow this structure:
+        1. First, analyze the user's request carefully and explain your reasoning step-by-step as text.
+        2. If solving the problem requires a tool/function, make a function call **after your reasoning** as a separate action. Only call the function after explaining why it is needed.
+        3. Once the function result is returned, use it along with your earlier reasoning to provide a complete and helpful final answer.
 
-        - When needed, respond with a function call using the tools you have been provided.
-        - If the answer is already known and no tool is required, respond normally.
-        - Your goal is to use tools efficiently and clearly, then integrate results into helpful answers.
+        Your response should contain:
+        - One or more parts with your reasoning (text)
+        - A separate part with the function call (if needed)
         """
-
-        user_prompt = types.Content(
+            # Create JSON role 'user'
+        user_prompt_content = types.Content(
             role='user',
-            parts=[types.Part.from_text(text=prompt)]
+            parts=[types.Part.from_text(text=user_prompt)]
         )
 
-        responses = self.client.models.generate_content(
+        init_response = self.client.models.generate_content(
             model='gemini-2.0-flash-001',
-            contents=[user_prompt],
+            contents=[user_prompt_content],
             config=types.GenerateContentConfig(
                 system_instruction = system_prompt,
                 tools = self.tools_list
             )
         )
 
-        response = responses.candidates[0].content.parts[0]
-        if response.function_call:
-            tool_name = response.function_call.name
-            tool_args = response.function_call.args
-            print(f"\n[Agent requested tool call: {tool_name} with args {tool_args}]")
+        print(f"\n[DEBUG] Number of candidates: {len(init_response.candidates)}")
+        for idx, cand in enumerate(init_response.candidates):
+            print(f"\n[DEBUG] Candidate {idx} has {len(cand.content.parts)} parts")
+
+        ai_response = init_response.candidates[0].content.parts
+            # Create JSON role 'assistant'
+        ai_response_content = types.Content(
+            role='assistant',
+            parts=ai_response
+        )
+        
+        function_call_part = next((part for part in ai_response if part.function_call), None)
+        if function_call_part:
+            tool_name = function_call_part.function_call.name
+            tool_args = function_call_part.function_call.args
+            print(f"\nAgent requested tool call: {tool_name} with args {tool_args}\n")
 
             try:
                 result = await self.session.call_tool(tool_name, tool_args)
@@ -68,29 +84,21 @@ class MCPClient:
             except Exception as e:
                 function_response = {"error": str(e)}
 
-                # Create JSON title for tool name
+                # Create JSON tool name and role 'tool'
             function_response_part = types.Part.from_function_response(
                 name=tool_name,
                 response=function_response
             )
-                # Create JSON role
             function_response_content = types.Content(
                 role='tool',
                 parts=[function_response_part]
             )
 
-            contents=[
-                    user_prompt,
-                    response,
-                    function_response_content
-                ]
-            print(contents)
-
             new_response = self.client.models.generate_content(
                 model='gemini-2.0-flash-001',
                 contents=[
-                    user_prompt,
-                    response,
+                    user_prompt_content,
+                    ai_response_content,
                     function_response_content
                 ],
                 config=types.GenerateContentConfig(
@@ -98,18 +106,24 @@ class MCPClient:
                     tools = self.tools_list
                 )
             )
+
+            print(f"[DEBUG] User:\n{user_prompt_content}\n")
+            print(f"[DEBUG] Agent:\n{ai_response_content}\n")
+            print(f"[DEBUG] Tool:\n{function_response_content}")
+
             return new_response.candidates[0].content.parts[0].text
         else:
-            return response.text
+            return init_response.text
 
     async def chat_loop(self):
         while True:
-            prompt = input("\User: ").strip()
-            if prompt.lower() == 'exit' or prompt.lower() == 'quit':
+            print("----------")
+            user_prompt = input("User: ").strip()
+            if user_prompt.lower() == 'exit' or user_prompt.lower() == 'quit':
                 break
 
-            response = await self.process(prompt)
-            print("\n" + response)
+            response = await self.process(user_prompt)
+            print("\nAgent: " + response)
 
     async def cleanup(self):
         if self._session_context:
