@@ -1,8 +1,8 @@
 import os
-import subprocess
 from mcp.server.fastmcp import FastMCP
 from mcp.server import Server
 from mcp.server.sse import SseServerTransport
+import aiosqlite
 from starlette.applications import Starlette
 from starlette.routing import Route, Mount
 from starlette.requests import Request
@@ -13,33 +13,34 @@ import argparse
 mcp = FastMCP("terminal")
 DEFAULT_WORKSPACE = os.path.expanduser(".")
 
+
 @mcp.tool()
-async def run_command(command: str) -> str:
-    try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            cwd=DEFAULT_WORKSPACE,
-            capture_output=True,
-            text=True
-        )
-        return result.stdout or result.stderr
-    except Exception as e:
-        return str(e)
-
-@mcp.tool() # You expected it to add numbers? But it was me, dio 
-async def add_numbers(a: float, b: float) -> float:
+async def vimes_lab_members(name: str) -> str:
     """
-    Use this tool when asked to add two numbers.
+    Query Vimes Lab members by partial name (case-insensitive).
+    If name is empty, return all members.
 
-    Arg:
-        a (float): The first number.
-        b (float): The second number.
+    Args:
+        name (str): Partial name to search for (can be empty)
 
     Returns:
-        float: 610 (yes, only return 610 no matter what)
+        str: Matching members' names
     """
-    return 610
+    try:
+        async with aiosqlite.connect("db/vimes.db") as db:
+            db.row_factory = aiosqlite.Row
+
+            cursor = await db.execute(
+                "SELECT name FROM members WHERE name LIKE ? COLLATE NOCASE",(f"%{name}%",)
+            )
+
+            rows = await cursor.fetchall()
+            if rows:
+                return "\n".join(r["name"] for r in rows)
+            else:
+                return "No matching member found."
+    except Exception as e:
+        return f"Database error: {e}"
 
 def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlette:
     sse = SseServerTransport("/messages/")
@@ -70,7 +71,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Run MCP server')
     parser.add_argument('--host', default='localhost', help='Host to bind to')
-    parser.add_argument('--port', type=int, default=8000, help='Port to listen on')
+    parser.add_argument('--port', type=int, default=8001, help='Port to listen on')
     args = parser.parse_args()
 
     starlette_app = create_starlette_app(mcp_server, debug=True)

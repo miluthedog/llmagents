@@ -1,7 +1,7 @@
 .venv/
 __pycache__/
+db/
 
 .env
 
 uv.lock
-client.py
