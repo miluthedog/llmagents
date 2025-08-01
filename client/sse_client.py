@@ -117,9 +117,9 @@ class MCPClient:
 
     async def chat_loop(self):
         while True:
-            print("----------")
+            print("============")
             user_prompt = input("User: ").strip()
-            if user_prompt.lower() == 'exit' or user_prompt.lower() == 'quit':
+            if user_prompt.lower() in ['exit', 'quit']:
                 break
 
             response = await self.process(user_prompt)

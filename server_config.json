@@ -1,0 +1,14 @@
+{
+  "servers": [
+        {
+            "id": "tool_server",
+            "url": "http://localhost:8000/sse",
+            "description": "Tools"
+        },
+        {
+            "id": "database_server", 
+            "url": "http://localhost:8001/sse",
+            "description": "Vimes's database"
+        }
+    ]
+}

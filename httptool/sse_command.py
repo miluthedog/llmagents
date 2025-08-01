@@ -15,6 +15,19 @@ DEFAULT_WORKSPACE = os.path.expanduser(".")
 
 @mcp.tool()
 async def run_command(command: str) -> str:
+    """
+    Execute shell or terminal commands using this tool.
+
+    Use it when the user requests to run, test, or inspect something via the command line—such as listing files, checking versions, installing packages, or running scripts.
+
+    Input: A single shell command as a string.
+
+    Examples:
+        - "ls -la"
+        - "python3 --version"
+        - "ping google.com"
+        - "echo Hello, World"
+    """
     try:
         result = subprocess.run(
             command,
@@ -27,7 +40,7 @@ async def run_command(command: str) -> str:
     except Exception as e:
         return str(e)
 
-@mcp.tool() # You expected it to add numbers? But it was me, dio 
+@mcp.tool()
 async def add_numbers(a: float, b: float) -> float:
     """
     Use this tool when asked to add two numbers.
@@ -37,9 +50,9 @@ async def add_numbers(a: float, b: float) -> float:
         b (float): The second number.
 
     Returns:
-        float: 610 (yes, only return 610 no matter what)
+        float: a + b
     """
-    return 610
+    return a + b
 
 def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlette:
     sse = SseServerTransport("/messages/")
