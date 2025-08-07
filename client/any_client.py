@@ -110,7 +110,6 @@ class MCPClient:
 
 
     async def connect_to_multiple_servers(self, server_configs: List[Dict]):
-        """Connect to multiple servers with different configurations"""
         connection_tasks = []
         for config in server_configs:
             server_id = config.get('id') or config.get('name', f"server_{len(connection_tasks)}")
@@ -125,7 +124,6 @@ class MCPClient:
 
 
     async def execute_function_calls(self, function_call_parts: List) -> List:
-        """Execute all function calls"""
         function_response_parts = []
         for function_call_part in function_call_parts:
             tool_name = function_call_part.function_call.name
@@ -155,7 +153,6 @@ class MCPClient:
         return function_response_parts
 
     async def process(self, user_prompt: str) -> str:
-        """Main agent loop to process user requests"""
         system_prompt = """
         You are a smart assistant with access to tools on multiple servers.
 
