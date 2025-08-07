@@ -23,7 +23,6 @@ class MCPClient:
         self.sessions: Dict[str, ClientSession] = {}
         self.streams_contexts: Dict[str, any] = {}
         self.session_contexts: Dict[str, any] = {}
-        # Note: processes are managed internally by stdio_client
         
         self.tools_list = []
         self.tool_to_server_mapping = {}
@@ -31,7 +30,6 @@ class MCPClient:
 
 
     async def connect_to_sse_server(self, server_url: str, server_id: str):
-        """Connect to an SSE-based MCP server"""
         print(f"Connecting to SSE server [{server_id}]: {server_url}")
         try:
             streams_context = sse_client(url=server_url)
@@ -61,7 +59,6 @@ class MCPClient:
 
 
     async def connect_to_subprocess_server(self, command: str, args: List[str], env: Dict[str, str], server_id: str):
-        """Connect to a subprocess-based MCP server"""
         print(f"Starting subprocess server [{server_id}]: {command} {' '.join(args)}")
         try:
             full_env = os.environ.copy()
