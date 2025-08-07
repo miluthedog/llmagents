@@ -1,0 +1,23 @@
+{
+  "servers": [
+    {
+      "id": "supabase",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@supabase/mcp-server-supabase@latest"],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_TOKEN"
+      },
+      "description": "Supabase database management"
+    },
+    {
+      "id": "tool_server",
+      "url": "http://localhost:8000/sse",
+      "description": "Tools"
+    },
+    {
+      "id": "database_server", 
+      "url": "http://localhost:8001/sse",
+      "description": "Vimes's database"
+    }
+  ]
+}
